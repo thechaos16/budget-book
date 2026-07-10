@@ -38,6 +38,24 @@ const Navbar = ({ onRequestRoleChange }) => {
     }
   };
 
+  const handleInstallClickIOS = () => {
+    const ua = navigator.userAgent || '';
+    const isChrome = ua.includes('CriOS') || ua.includes('Chrome') || ua.includes('chrome');
+    if (isChrome) {
+      alert(
+        '아이패드 크롬(Chrome) 설치 방법:\n\n' +
+        '1. 주소창 오른쪽에 있는 [공유(📤)] 아이콘을 누릅니다.\n' +
+        '2. 공유 메뉴 창에서 아래로 스크롤하여 [홈 화면에 추가(➕)]를 누릅니다.'
+      );
+    } else {
+      alert(
+        '아이패드 사파리(Safari) 설치 방법:\n\n' +
+        '1. 브라우저 주소창 또는 툴바의 [공유(📤)] 버튼을 누릅니다.\n' +
+        '2. 메뉴 창에서 아래로 스크롤하여 [홈 화면에 추가(➕)]를 누릅니다.'
+      );
+    }
+  };
+
   const roles = [
     { id: 'kid', label: '아이 (나)', emoji: '👦', themeClass: 'role-kid' },
     { id: 'father', label: '아빠', emoji: '👨', themeClass: 'role-father' },
@@ -69,7 +87,7 @@ const Navbar = ({ onRequestRoleChange }) => {
         )}
         {isIOS && !isInstalled && (
           <button 
-            onClick={() => alert('아이폰/아이패드 설치 방법:\n\n1. Safari 브라우저 하단의 [공유(📤)] 버튼을 누릅니다.\n2. 메뉴를 아래로 스크롤하여 [홈 화면에 추가(➕)]를 누릅니다.')} 
+            onClick={handleInstallClickIOS} 
             className="install-app-btn bounce-hover"
             style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}
           >
