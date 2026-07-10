@@ -1,14 +1,44 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useBudget } from '../context/BudgetContext';
 import { Sparkles, Shield, User } from 'lucide-react';
 
 const Navbar = ({ onRequestRoleChange }) => {
   const { userRole, setUserRole } = useBudget();
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+      setIsInstalled(true);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    }
+  };
 
   const roles = [
-    { id: 'kid', label: '👦 아이 (나)', emoji: '👦', themeClass: 'role-kid' },
-    { id: 'father', label: '👨 아빠', emoji: '👨', themeClass: 'role-father' },
-    { id: 'mother', label: '👩 엄마', emoji: '👩', themeClass: 'role-mother' }
+    { id: 'kid', label: '아이 (나)', emoji: '👦', themeClass: 'role-kid' },
+    { id: 'father', label: '아빠', emoji: '👨', themeClass: 'role-father' },
+    { id: 'mother', label: '엄마', emoji: '👩', themeClass: 'role-mother' }
   ];
 
   const handleRoleClick = (roleId) => {
@@ -25,8 +55,24 @@ const Navbar = ({ onRequestRoleChange }) => {
 
       <div className="nav-logo">
         <span className="logo-emoji">💰</span>
-        <span className="logo-text">꼬마 저금통</span>
-        <span className="logo-sub">Kid's Budget Book</span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+          <span className="logo-text">꼬마 저금통</span>
+          <span className="logo-sub" style={{ margin: 0, marginTop: '2px' }}>Kid's Budget Book</span>
+        </div>
+        {deferredPrompt && (
+          <button onClick={handleInstallClick} className="install-app-btn bounce-hover">
+            📲 앱 다운로드
+          </button>
+        )}
+        {isIOS && !isInstalled && (
+          <button 
+            onClick={() => alert('아이폰/아이패드 설치 방법:\n\n1. Safari 브라우저 하단의 [공유(📤)] 버튼을 누릅니다.\n2. 메뉴를 아래로 스크롤하여 [홈 화면에 추가(➕)]를 누릅니다.')} 
+            className="install-app-btn bounce-hover"
+            style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}
+          >
+            📲 앱 다운로드
+          </button>
+        )}
       </div>
 
       <div className="role-selector">
@@ -90,6 +136,29 @@ const Navbar = ({ onRequestRoleChange }) => {
           border-radius: 20px;
           margin-left: 8px;
           font-weight: 600;
+        }
+
+        .install-app-btn {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: white;
+          border: none;
+          padding: 6px 12px;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          box-shadow: var(--shadow-sm);
+          transition: var(--transition-bounce);
+          margin-left: 12px;
+          white-space: nowrap;
+        }
+
+        .install-app-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-md);
         }
 
         .role-selector {

@@ -46,10 +46,8 @@ const ParentDashboard = () => {
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
 
-  // SQL schema states
-  const [showSqlSchema, setShowSqlSchema] = useState(false);
+  // Copy states
   const [isCopied, setIsCopied] = useState(false);
-  const [isSqlCopied, setIsSqlCopied] = useState(false);
 
   // Notification Toast
   const [toastMessage, setToastMessage] = useState('');
@@ -171,12 +169,6 @@ const ParentDashboard = () => {
     setTimeout(() => setIsCopied(false), 2000);
   };
 
-  const copySqlSchema = () => {
-    navigator.clipboard.writeText(SQL_SCHEMA);
-    setIsSqlCopied(true);
-    setTimeout(() => setIsSqlCopied(false), 2000);
-  };
-
   const handleQuickAdd = (value) => {
     setDepositAmount(prev => {
       const current = Number(prev) || 0;
@@ -243,39 +235,6 @@ const ParentDashboard = () => {
           </div>
         )}
 
-        <div style={{ marginTop: '4px' }}>
-          <button 
-            type="button" 
-            onClick={() => setShowSqlSchema(!showSqlSchema)} 
-            className="btn-toggle-config"
-            style={{ padding: '4px 8px', fontSize: '0.7rem' }}
-          >
-            {showSqlSchema ? 'SQL 스크립트 닫기' : 'Supabase SQL 테이블 설정 코드 보기'}
-          </button>
-          
-          {showSqlSchema && (
-            <div className="animate-slide-down" style={{ marginTop: '8px' }}>
-              <p className="history-subtitle" style={{ marginBottom: '6px' }}>
-                Supabase SQL Editor에 아래 스크립트를 복사하여 실행하면 필요한 테이블이 자동 생성됩니다.
-              </p>
-              <div style={{ position: 'relative' }}>
-                <textarea 
-                  className="sql-schema-area" 
-                  value={SQL_SCHEMA} 
-                  readOnly 
-                />
-                <button 
-                  type="button" 
-                  onClick={copySqlSchema} 
-                  className="btn-copy"
-                  style={{ position: 'absolute', top: '16px', right: '16px', background: '#334155', borderColor: '#475569', color: '#f8fafc' }}
-                >
-                  <span>{isSqlCopied ? '복사됨!' : '스크립트 복사'}</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
 
       <div className="parent-grid">
@@ -863,6 +822,10 @@ const ParentDashboard = () => {
           overflow-x: auto;
           padding: 4px 2px;
           white-space: nowrap;
+          max-width: 100%;
+          width: 100%;
+          box-sizing: border-box;
+          -webkit-overflow-scrolling: touch;
         }
 
         .sticker-option {
@@ -1371,6 +1334,27 @@ const ParentDashboard = () => {
           }
           .mobile-only {
             display: flex !important;
+          }
+          .parent-dashboard-container {
+            padding: 0 10px 30px 10px;
+          }
+          .form-card {
+            padding: 16px;
+          }
+          .quick-presets {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+          }
+          .quick-presets button {
+            min-width: 0;
+            width: 100%;
+            padding: 8px 4px;
+            font-size: 0.75rem;
+          }
+          .quick-presets button.reset-btn {
+            grid-column: span 4;
+            padding: 8px;
           }
         }
       `}</style>
