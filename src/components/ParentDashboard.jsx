@@ -605,7 +605,9 @@ const ParentDashboard = () => {
           gap: 24px;
           padding: 0 16px 40px 16px;
           max-width: 1000px;
+          width: 100%;
           margin: 0 auto;
+          box-sizing: border-box;
         }
 
         /* Toast notification */
@@ -642,6 +644,8 @@ const ParentDashboard = () => {
           justify-content: space-between;
           gap: 16px;
           box-shadow: var(--shadow-md);
+          width: 100%;
+          box-sizing: border-box;
         }
 
         .father-banner {
@@ -701,6 +705,8 @@ const ParentDashboard = () => {
           display: grid;
           grid-template-columns: 1fr;
           gap: 24px;
+          width: 100%;
+          min-width: 0;
         }
 
         @media (min-width: 768px) {
@@ -716,6 +722,9 @@ const ParentDashboard = () => {
           border-radius: var(--border-radius-lg);
           box-shadow: var(--shadow-md);
           border: 1px solid #f1f5f9;
+          width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
         }
 
         .form-card h3 {
@@ -969,6 +978,9 @@ const ParentDashboard = () => {
           border-radius: var(--border-radius-lg);
           box-shadow: var(--shadow-md);
           border: 1px solid #f1f5f9;
+          width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
         }
 
         .parent-history-card h3 {
@@ -1204,6 +1216,9 @@ const ParentDashboard = () => {
           flex-direction: column;
           gap: 12px;
           margin-bottom: 24px;
+          width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
         }
 
         .db-pairing-card h3 {

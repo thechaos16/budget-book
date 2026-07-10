@@ -7,7 +7,10 @@ const Navbar = ({ onRequestRoleChange }) => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
 
-  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isIPad = typeof navigator !== 'undefined' && 
+    (navigator.platform === 'MacIntel' || navigator.userAgent.includes('Macintosh')) && 
+    navigator.maxTouchPoints > 1;
+  const isIOS = (typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) || isIPad;
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
@@ -107,6 +110,8 @@ const Navbar = ({ onRequestRoleChange }) => {
           border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
           margin-bottom: 30px;
           transition: var(--transition-smooth);
+          width: 100%;
+          box-sizing: border-box;
         }
 
         .nav-logo {
