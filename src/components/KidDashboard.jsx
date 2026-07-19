@@ -12,8 +12,29 @@ const KidDashboard = () => {
   // Let's show both but color code: green for deposits, orange/red for spending.
   const recentHistory = transactions.slice(0, 10);
 
-  // Get active/latest goal
-  const activeGoal = goals[0]; // For simplicity, take the first goal in list
+  // Selected active goal from localStorage or fallback to latest
+  const [activeGoalId, setActiveGoalId] = useState(() => {
+    return localStorage.getItem('bb_active_goal_id') || '';
+  });
+
+  // Find the active goal object
+  let activeGoal = goals.find(g => g.id === activeGoalId);
+  // Fallback to first goal if activeGoalId doesn't exist or is not in the goals array
+  if (!activeGoal && goals.length > 0) {
+    activeGoal = goals[0];
+  }
+
+  const handleGoalSelect = (id) => {
+    setActiveGoalId(id);
+    localStorage.setItem('bb_active_goal_id', id);
+    
+    // Fun confetti for switching goals!
+    confetti({
+      particleCount: 40,
+      spread: 50,
+      origin: { y: 0.7 }
+    });
+  };
 
   const handlePiggyClick = (e) => {
     setClickCount(prev => prev + 1);
@@ -141,6 +162,40 @@ const KidDashboard = () => {
                 <p className="goal-motivation-text">
                   목표 달성까지 <strong>{(activeGoal.targetAmount - balance).toLocaleString()}원</strong> 남았어요! 화이팅! 💪
                 </p>
+              )}
+
+              {/* Goal List for selection */}
+              {goals.length > 1 && (
+                <div className="goal-selector-section">
+                  <h5 className="goal-selector-title">다른 목표 선택하기 🎯</h5>
+                  <div className="goal-selector-list">
+                    {goals.map(g => {
+                      const isSelected = g.id === activeGoal.id;
+                      const gProgress = Math.min(Math.round((balance / g.targetAmount) * 100), 100);
+                      return (
+                        <button
+                          key={g.id}
+                          className={`goal-selector-item ${isSelected ? 'active' : ''}`}
+                          onClick={() => handleGoalSelect(g.id)}
+                          type="button"
+                        >
+                          <div className="selector-item-content">
+                            <span className="selector-item-title">
+                              {isSelected ? '⭐ ' : ''}{g.title}
+                            </span>
+                            <span className="selector-item-progress">{gProgress}% 완료</span>
+                          </div>
+                          <div className="selector-progress-bar-bg">
+                            <div 
+                              className="selector-progress-bar-fill"
+                              style={{ width: `${gProgress}%` }}
+                            />
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </div>
           ) : (
@@ -573,6 +628,120 @@ const KidDashboard = () => {
 
         .item-amount.minus {
           color: #fb7185;
+        }
+
+        /* Goal Selector Styles */
+        .goal-selector-section {
+          margin-top: 16px;
+          border-top: 2px dashed #f0f9ff;
+          padding-top: 16px;
+        }
+
+        .goal-selector-title {
+          font-size: 0.9rem;
+          font-weight: 700;
+          color: var(--kid-text);
+          margin-bottom: 10px;
+        }
+
+        .goal-selector-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          max-height: 180px;
+          overflow-y: auto;
+          padding-right: 4px;
+        }
+
+        .goal-selector-list::-webkit-scrollbar {
+          width: 6px;
+        }
+        .goal-selector-list::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 4px;
+        }
+        .goal-selector-list::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 4px;
+        }
+
+        .goal-selector-item {
+          width: 100%;
+          text-align: left;
+          background: #f8fafc;
+          border: 2px solid #f1f5f9;
+          border-radius: var(--border-radius-sm);
+          padding: 10px 12px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .goal-selector-item:hover {
+          background: #f0fdf4;
+          border-color: #bbf7d0;
+          transform: translateY(-1px);
+        }
+
+        .goal-selector-item.active {
+          background: #fffbeb;
+          border-color: var(--kid-secondary);
+          box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+        }
+
+        .selector-item-content {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .selector-item-title {
+          font-size: 0.85rem;
+          font-weight: 700;
+          color: var(--kid-text);
+        }
+
+        .goal-selector-item.active .selector-item-title {
+          color: #b45309;
+        }
+
+        .selector-item-progress {
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: var(--kid-text-light);
+        }
+
+        .goal-selector-item.active .selector-item-progress {
+          color: #d97706;
+        }
+
+        .selector-progress-bar-bg {
+          height: 6px;
+          background: #e2e8f0;
+          border-radius: 3px;
+          overflow: hidden;
+          width: 100%;
+        }
+
+        .goal-selector-item.active .selector-progress-bar-bg {
+          background: #fef3c7;
+        }
+
+        .selector-progress-bar-fill {
+          height: 100%;
+          background: #94a3b8;
+          border-radius: 3px;
+          transition: width 0.4s ease;
+        }
+
+        .goal-selector-item:hover .selector-progress-bar-fill {
+          background: #4ade80;
+        }
+
+        .goal-selector-item.active .selector-progress-bar-fill {
+          background: linear-gradient(90deg, var(--kid-secondary) 0%, #10b981 100%);
         }
 
         .empty-history {
