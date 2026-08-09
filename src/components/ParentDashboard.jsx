@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useBudget } from '../context/BudgetContext';
-import { Send, ArrowDownCircle, Trash2, Trophy, Plus, CheckCircle } from 'lucide-react';
+import { Send, ArrowDownCircle, Trash2, Trophy, Plus, CheckCircle, Pencil, Check, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const ParentDashboard = () => {
@@ -23,6 +23,7 @@ const ParentDashboard = () => {
     addWithdrawal, 
     deleteTransaction, 
     addGoal, 
+    updateGoal,
     deleteGoal 
   } = useBudget();
 
@@ -40,6 +41,11 @@ const ParentDashboard = () => {
   // Form states for adding goal
   const [goalTitle, setGoalTitle] = useState('');
   const [goalTarget, setGoalTarget] = useState('');
+
+  // States for editing goal
+  const [editingGoalId, setEditingGoalId] = useState(null);
+  const [editGoalTitle, setEditGoalTitle] = useState('');
+  const [editGoalTarget, setEditGoalTarget] = useState('');
 
   // Form states for passcode change
   const [currentPin, setCurrentPin] = useState('');
@@ -120,16 +126,37 @@ const ParentDashboard = () => {
   const handleGoalSubmit = (e) => {
     e.preventDefault();
     if (!goalTitle || !goalTarget || Number(goalTarget) <= 0) {
-      alert('올바른 목표 이름과 금액을 입력해 주세요.');
+      showToast('올바른 목표 이름과 금액을 입력해주세요!');
       return;
     }
 
     addGoal(goalTitle, goalTarget);
     showToast(`새로운 저축 목표 [${goalTitle}] 가 등록되었습니다! 🎯`);
-
-    // Reset form
+    
     setGoalTitle('');
     setGoalTarget('');
+  };
+
+  const handleStartEditGoal = (goal) => {
+    setEditingGoalId(goal.id);
+    setEditGoalTitle(goal.title);
+    setEditGoalTarget(goal.targetAmount.toString());
+  };
+
+  const handleCancelEditGoal = () => {
+    setEditingGoalId(null);
+    setEditGoalTitle('');
+    setEditGoalTarget('');
+  };
+
+  const handleSaveEditGoal = (goalId) => {
+    if (!editGoalTitle.trim() || !editGoalTarget || Number(editGoalTarget) <= 0) {
+      showToast('올바른 목표 이름과 금액을 입력해주세요!');
+      return;
+    }
+    updateGoal(goalId, editGoalTitle.trim(), editGoalTarget);
+    showToast('저축 목표가 수정되었습니다! ✏️');
+    handleCancelEditGoal();
   };
 
   const handlePinSubmit = (e) => {
@@ -404,24 +431,80 @@ const ParentDashboard = () => {
               <div className="active-goals-list-wrapper">
                 <h4>현재 설정된 목표 목록</h4>
                 <div className="active-goals-list">
-                  {goals.map(g => (
-                    <div key={g.id} className="parent-goal-item">
-                      <div className="parent-goal-info">
-                        <span className="parent-goal-title">{g.title}</span>
-                        <span className="parent-goal-target">{g.targetAmount.toLocaleString()}원</span>
+                  {goals.map(g => {
+                    const isEditing = editingGoalId === g.id;
+                    return (
+                      <div key={g.id} className={`parent-goal-item ${isEditing ? 'editing' : ''}`}>
+                        {isEditing ? (
+                          <div className="parent-goal-edit-form">
+                            <input
+                              type="text"
+                              className="goal-edit-input title-input"
+                              value={editGoalTitle}
+                              onChange={(e) => setEditGoalTitle(e.target.value)}
+                              placeholder="목표 이름"
+                              autoFocus
+                            />
+                            <div className="goal-edit-target-wrapper">
+                              <input
+                                type="number"
+                                className="goal-edit-input target-input"
+                                value={editGoalTarget}
+                                onChange={(e) => setEditGoalTarget(e.target.value)}
+                                placeholder="목표 금액"
+                              />
+                              <span className="goal-edit-suffix">원</span>
+                            </div>
+                            <div className="parent-goal-actions">
+                              <button
+                                type="button"
+                                onClick={() => handleSaveEditGoal(g.id)}
+                                className="save-icon-btn"
+                                title="저장"
+                              >
+                                <Check size={16} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleCancelEditGoal}
+                                className="cancel-icon-btn"
+                                title="취소"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="parent-goal-info">
+                              <span className="parent-goal-title">{g.title}</span>
+                              <span className="parent-goal-target">{g.targetAmount.toLocaleString()}원</span>
+                            </div>
+                            <div className="parent-goal-actions">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditGoal(g)}
+                                className="edit-icon-btn"
+                                title="목표 수정"
+                              >
+                                <Pencil size={16} />
+                              </button>
+                              <button 
+                                type="button" 
+                                onClick={() => {
+                                  if (confirm('이 목표를 삭제하시겠습니까?')) deleteGoal(g.id);
+                                }}
+                                className="delete-icon-btn"
+                                title="목표 삭제"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
-                      <button 
-                        type="button" 
-                        onClick={() => {
-                          if (confirm('이 목표를 삭제하시겠습니까?')) deleteGoal(g.id);
-                        }}
-                        className="delete-icon-btn"
-                        title="목표 삭제"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -958,17 +1041,100 @@ const ParentDashboard = () => {
           font-weight: 600;
         }
 
-        .delete-icon-btn {
+        .parent-goal-actions {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .edit-icon-btn,
+        .delete-icon-btn,
+        .save-icon-btn,
+        .cancel-icon-btn {
           background: transparent;
           border: none;
           color: #94a3b8;
           cursor: pointer;
           transition: var(--transition-smooth);
           padding: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 4px;
+        }
+
+        .edit-icon-btn:hover {
+          color: #3b82f6;
+          background: #eff6ff;
         }
 
         .delete-icon-btn:hover {
           color: #ef4444;
+          background: #fef2f2;
+        }
+
+        .save-icon-btn {
+          color: #10b981;
+        }
+        .save-icon-btn:hover {
+          color: #059669;
+          background: #ecfdf5;
+        }
+
+        .cancel-icon-btn {
+          color: #64748b;
+        }
+        .cancel-icon-btn:hover {
+          color: #334155;
+          background: #f1f5f9;
+        }
+
+        .parent-goal-item.editing {
+          background: #ffffff;
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+
+        .parent-goal-edit-form {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          gap: 8px;
+          width: 100%;
+        }
+
+        .goal-edit-input {
+          padding: 4px 8px;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          font-size: 0.8rem;
+          outline: none;
+        }
+
+        .goal-edit-input:focus {
+          border-color: #3b82f6;
+        }
+
+        .goal-edit-input.title-input {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .goal-edit-target-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 2px;
+          width: 110px;
+        }
+
+        .goal-edit-input.target-input {
+          width: 100%;
+        }
+
+        .goal-edit-suffix {
+          font-size: 0.75rem;
+          color: #64748b;
+          white-space: nowrap;
         }
 
         /* History Table styles */

@@ -259,6 +259,9 @@ export const BudgetProvider = ({ children }) => {
               if (prev.some(g => g.id === newGoal.id)) return prev;
               return [newGoal, ...prev];
             });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedGoal = { ...payload.new, targetAmount: Number(payload.new.target_amount) };
+            setGoals(prev => prev.map(g => g.id === updatedGoal.id ? { ...g, ...updatedGoal } : g));
           } else if (payload.eventType === 'DELETE') {
             setGoals(prev => prev.filter(g => g.id !== payload.old.id));
           }
@@ -385,6 +388,21 @@ export const BudgetProvider = ({ children }) => {
         target_amount: Number(targetAmount),
         created_at: createdAt
       });
+    }
+  };
+
+  const updateGoal = async (id, title, targetAmount) => {
+    const targetNum = Number(targetAmount);
+    setGoals(prev => prev.map(g => g.id === id ? { ...g, title, targetAmount: targetNum } : g));
+
+    if (dbMode === 'cloud') {
+      await dbClient
+        .from('bb_goals')
+        .update({
+          title,
+          target_amount: targetNum
+        })
+        .eq('id', id);
     }
   };
 
@@ -557,6 +575,7 @@ export const BudgetProvider = ({ children }) => {
       addWithdrawal,
       deleteTransaction,
       addGoal,
+      updateGoal,
       deleteGoal
     }}>
       {children}
