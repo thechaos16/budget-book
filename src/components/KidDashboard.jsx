@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useBudget } from '../context/BudgetContext';
-import { TrendingUp, Sparkles, Award, Gift, Calendar, ArrowUpRight } from 'lucide-react';
+import { Sparkles, Award, Calendar, Trophy } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const KidDashboard = () => {
-  const { balance, transactions, goals } = useBudget();
+  const { balance, transactions, goals, toggleGoalDone } = useBudget();
   const [clickCount, setClickCount] = useState(0);
   const [floatingCoins, setFloatingCoins] = useState([]);
 
@@ -17,8 +17,10 @@ const KidDashboard = () => {
     return localStorage.getItem('bb_active_goal_id') || '';
   });
 
-  // Only display undone goals on the front page
+  // Only display undone goals on the active tracker
   const undoneGoals = goals.filter(g => !g.isDone && !g.completedAt);
+  // Completed goals for the Hall of Fame
+  const completedGoals = goals.filter(g => g.isDone || g.completedAt);
 
   // Find the active goal object among undone goals
   let activeGoal = undoneGoals.find(g => g.id === activeGoalId);
@@ -75,6 +77,13 @@ const KidDashboard = () => {
     const date = new Date(isoString);
     const months = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
     return `${months[date.getMonth()]} ${date.getDate()}일`;
+  };
+
+  const formatFameDate = (isoString) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return '';
+    return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
   };
 
   const getGoalProgress = () => {
@@ -158,8 +167,28 @@ const KidDashboard = () => {
 
               {balance >= activeGoal.targetAmount ? (
                 <div className="goal-success-box animate-pulse-gold">
-                  <Award className="success-icon" />
-                  <p>우와! 목표를 달성했어요! 🥳 아빠 엄마에게 말해서 선물을 받으세요!</p>
+                  <div className="goal-success-top">
+                    <Award className="success-icon" />
+                    <div>
+                      <p className="goal-success-main">우와! 목표를 달성했어요! 🥳</p>
+                      <p className="goal-success-sub">아빠 엄마에게 알리고 명예의 전당에 올려보세요!</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="goal-complete-btn bounce-hover"
+                    onClick={() => {
+                      confetti({
+                        particleCount: 80,
+                        spread: 70,
+                        origin: { y: 0.6 },
+                        colors: ['#ffd700', '#f59e0b', '#10b981', '#3b82f6', '#ec4899']
+                      });
+                      toggleGoalDone(activeGoal.id, true);
+                    }}
+                  >
+                    🏆 명예의 전당에 등록하기!
+                  </button>
                 </div>
               ) : (
                 <p className="goal-motivation-text">
@@ -207,6 +236,95 @@ const KidDashboard = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Hall of Fame / Completed Goals Block */}
+      <div className="hall-of-fame-section">
+        <div className="hall-of-fame-header">
+          <div className="hall-of-fame-title-group">
+            <span className="hall-of-fame-trophy-emoji">🏆</span>
+            <div>
+              <h3 className="hall-of-fame-title">명예의 전당 (Hall of Fame)</h3>
+              <p className="hall-of-fame-desc">차곡차곡 저축해서 이뤄낸 멋진 꿈들이에요!</p>
+            </div>
+          </div>
+          {completedGoals.length > 0 && (
+            <div className="hall-of-fame-badge">
+              <span>총 {completedGoals.length}개 달성</span>
+              <Sparkles size={14} className="sparkle-gold" />
+            </div>
+          )}
+        </div>
+
+        {completedGoals.length > 0 ? (
+          <div className="hall-of-fame-grid">
+            {completedGoals.map((g, idx) => (
+              <div
+                key={g.id}
+                className="fame-card"
+                onClick={() => {
+                  confetti({
+                    particleCount: 50,
+                    spread: 60,
+                    origin: { y: 0.6 },
+                    colors: ['#ffd700', '#f59e0b', '#ff6b6b', '#48bb78', '#4299e1']
+                  });
+                }}
+                title="카드를 눌러 축하 폭죽을 터뜨려보세요! 🎉"
+              >
+                <div className="fame-card-crown">
+                  {idx === 0 ? '👑' : idx === 1 ? '⭐' : '✨'}
+                </div>
+                <div className="fame-card-badge-row">
+                  <span className="fame-card-rank">
+                    {idx === 0 ? '🥇 1호 목표' : idx === 1 ? '🥈 2호 목표' : idx === 2 ? '🥉 3호 목표' : `🎖️ ${idx + 1}호 목표`}
+                  </span>
+                  <span className="fame-card-done-tag">달성 완료!</span>
+                </div>
+                
+                <div className="fame-card-body">
+                  <div className="fame-icon-box">
+                    <Trophy className="fame-icon-svg" />
+                  </div>
+                  <div className="fame-card-text">
+                    <h4 className="fame-title">{g.title}</h4>
+                    <p className="fame-target-amount">{g.targetAmount.toLocaleString()}원 저축 성공 🎉</p>
+                  </div>
+                </div>
+
+                <div className="fame-card-footer">
+                  <span className="fame-date-text">
+                    <Calendar size={13} />
+                    {g.completedAt ? formatFameDate(g.completedAt) : '달성 완료'}
+                  </span>
+                  <button
+                    type="button"
+                    className="fame-confetti-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      confetti({
+                        particleCount: 60,
+                        spread: 70,
+                        origin: { y: 0.6 },
+                        colors: ['#ffd700', '#f59e0b', '#3b82f6', '#ec4899']
+                      });
+                    }}
+                  >
+                    🎊 팡파레
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="fame-empty-state">
+            <div className="fame-empty-icon">🏆</div>
+            <h4>아직 명예의 전당이 비어있어요</h4>
+            <p>
+              목표 금액을 끝까지 모아서 명예의 전당에 첫 번째 황금 트로피를 세워보세요! 🌟
+            </p>
+          </div>
+        )}
       </div>
 
       {/* History Log */}
@@ -754,6 +872,330 @@ const KidDashboard = () => {
           background: rgba(255,255,255,0.5);
           border-radius: var(--border-radius-md);
           border: 2px dashed #cbd5e1;
+        }
+
+        /* Success Box Enhancements */
+        .goal-success-box {
+          background: #ecfdf5;
+          border: 2px solid #34d399;
+          border-radius: var(--border-radius-md);
+          padding: 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          color: #065f46;
+        }
+
+        .goal-success-top {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+        }
+
+        .goal-success-main {
+          font-size: 0.95rem;
+          font-weight: 800;
+          color: #065f46;
+          margin: 0;
+        }
+
+        .goal-success-sub {
+          font-size: 0.8rem;
+          color: #047857;
+          margin: 2px 0 0 0;
+          font-weight: 600;
+        }
+
+        .goal-complete-btn {
+          align-self: flex-start;
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+          color: white;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 20px;
+          font-size: 0.82rem;
+          font-weight: 800;
+          cursor: pointer;
+          box-shadow: 0 4px 10px rgba(217, 119, 6, 0.3);
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .goal-complete-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 14px rgba(217, 119, 6, 0.4);
+        }
+
+        /* Hall of Fame Section */
+        .hall-of-fame-section {
+          background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 45%, #fffdf5 100%);
+          border: 3px solid #fde68a;
+          border-radius: var(--border-radius-lg);
+          padding: 24px;
+          box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.15), 0 8px 10px -6px rgba(245, 158, 11, 0.1);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .hall-of-fame-section::before {
+          content: '';
+          position: absolute;
+          top: -40px;
+          right: -40px;
+          width: 140px;
+          height: 140px;
+          background: radial-gradient(circle, rgba(251, 191, 36, 0.25) 0%, rgba(251, 191, 36, 0) 70%);
+          border-radius: 50%;
+          pointer-events: none;
+        }
+
+        .hall-of-fame-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+          flex-wrap: wrap;
+          gap: 12px;
+          position: relative;
+          z-index: 1;
+        }
+
+        .hall-of-fame-title-group {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .hall-of-fame-trophy-emoji {
+          font-size: 2.2rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 52px;
+          height: 52px;
+          background: white;
+          border-radius: 16px;
+          box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+          border: 2px solid #fde68a;
+          animation: gentleFloat 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes gentleFloat {
+          0% { transform: translateY(0px); }
+          100% { transform: translateY(-4px); }
+        }
+
+        .hall-of-fame-title {
+          font-size: 1.25rem;
+          font-weight: 800;
+          color: #92400e;
+          margin: 0;
+          letter-spacing: -0.3px;
+        }
+
+        .hall-of-fame-desc {
+          font-size: 0.82rem;
+          color: #b45309;
+          margin: 3px 0 0 0;
+          font-weight: 600;
+        }
+
+        .hall-of-fame-badge {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: #f59e0b;
+          color: white;
+          padding: 6px 14px;
+          border-radius: 20px;
+          font-size: 0.82rem;
+          font-weight: 800;
+          box-shadow: 0 3px 8px rgba(245, 158, 11, 0.35);
+        }
+
+        .sparkle-gold {
+          color: #fef08a;
+        }
+
+        .hall-of-fame-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 16px;
+          position: relative;
+          z-index: 1;
+        }
+
+        @media (min-width: 640px) {
+          .hall-of-fame-grid {
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+          }
+        }
+
+        .fame-card {
+          background: white;
+          border: 2px solid #fef08a;
+          border-radius: var(--border-radius-md);
+          padding: 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          box-shadow: 0 4px 12px rgba(217, 119, 6, 0.08);
+          cursor: pointer;
+          position: relative;
+          overflow: hidden;
+          transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+
+        .fame-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 12px 24px rgba(217, 119, 6, 0.18);
+          border-color: #f59e0b;
+        }
+
+        .fame-card-crown {
+          position: absolute;
+          top: -6px;
+          right: 12px;
+          font-size: 1.5rem;
+          pointer-events: none;
+          opacity: 0.85;
+          transform: rotate(15deg);
+        }
+
+        .fame-card-badge-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding-right: 24px;
+        }
+
+        .fame-card-rank {
+          font-size: 0.78rem;
+          font-weight: 800;
+          color: #b45309;
+          background: #fef3c7;
+          padding: 3px 8px;
+          border-radius: 8px;
+        }
+
+        .fame-card-done-tag {
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: #059669;
+          background: #d1fae5;
+          padding: 3px 8px;
+          border-radius: 8px;
+        }
+
+        .fame-card-body {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .fame-icon-box {
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #fef08a 0%, #f59e0b 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+          flex-shrink: 0;
+        }
+
+        .fame-icon-svg {
+          width: 22px;
+          height: 22px;
+          color: white;
+        }
+
+        .fame-card-text {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .fame-title {
+          font-size: 1.05rem;
+          font-weight: 800;
+          color: var(--kid-text);
+          margin: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .fame-target-amount {
+          font-size: 0.82rem;
+          font-weight: 700;
+          color: #d97706;
+          margin: 2px 0 0 0;
+        }
+
+        .fame-card-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-top: 10px;
+          border-top: 1px dashed #fde68a;
+          margin-top: 2px;
+        }
+
+        .fame-date-text {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 0.75rem;
+          color: var(--kid-text-light);
+          font-weight: 600;
+        }
+
+        .fame-confetti-btn {
+          background: #fffbeb;
+          border: 1px solid #fde68a;
+          color: #b45309;
+          font-size: 0.72rem;
+          font-weight: 700;
+          padding: 3px 8px;
+          border-radius: 12px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .fame-confetti-btn:hover {
+          background: #f59e0b;
+          color: white;
+          transform: scale(1.05);
+        }
+
+        .fame-empty-state {
+          text-align: center;
+          padding: 32px 16px;
+          background: rgba(255, 255, 255, 0.65);
+          backdrop-filter: blur(4px);
+          border-radius: var(--border-radius-md);
+          border: 2px dashed #fde68a;
+        }
+
+        .fame-empty-icon {
+          font-size: 2.8rem;
+          margin-bottom: 8px;
+          filter: grayscale(0.2) drop-shadow(0 4px 8px rgba(245, 158, 11, 0.2));
+        }
+
+        .fame-empty-state h4 {
+          font-size: 1.05rem;
+          color: #92400e;
+          font-weight: 800;
+          margin-bottom: 4px;
+        }
+
+        .fame-empty-state p {
+          font-size: 0.85rem;
+          color: #b45309;
+          max-width: 400px;
+          margin: 0 auto;
+          line-height: 1.4;
         }
       `}</style>
     </div>
