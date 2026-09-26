@@ -41,6 +41,8 @@ const INITIAL_GOALS = [
     id: 'g-1',
     title: '레고 스타워즈 세트 🛸',
     targetAmount: 50000,
+    isDone: false,
+    completedAt: null,
     createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
   }
 ];
@@ -81,6 +83,8 @@ create table bb_goals (
   family_id text references bb_families(id) on delete cascade not null,
   title text not null,
   target_amount numeric not null,
+  is_done boolean default false not null,
+  completed_at timestamp with time zone default null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -216,7 +220,12 @@ export const BudgetProvider = ({ children }) => {
         .order('created_at', { ascending: false });
 
       if (!gErr && gls) {
-        const formatted = gls.map(g => ({ ...g, targetAmount: Number(g.target_amount) }));
+        const formatted = gls.map(g => ({
+          ...g,
+          targetAmount: Number(g.target_amount),
+          isDone: Boolean(g.is_done),
+          completedAt: g.completed_at || null
+        }));
         setGoals(formatted);
       }
     };
@@ -254,13 +263,23 @@ export const BudgetProvider = ({ children }) => {
         { event: '*', schema: 'public', table: 'bb_goals', filter: `family_id=eq.${familyCode}` },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            const newGoal = { ...payload.new, targetAmount: Number(payload.new.target_amount) };
+            const newGoal = {
+              ...payload.new,
+              targetAmount: Number(payload.new.target_amount),
+              isDone: Boolean(payload.new.is_done),
+              completedAt: payload.new.completed_at || null
+            };
             setGoals(prev => {
               if (prev.some(g => g.id === newGoal.id)) return prev;
               return [newGoal, ...prev];
             });
           } else if (payload.eventType === 'UPDATE') {
-            const updatedGoal = { ...payload.new, targetAmount: Number(payload.new.target_amount) };
+            const updatedGoal = {
+              ...payload.new,
+              targetAmount: Number(payload.new.target_amount),
+              isDone: Boolean(payload.new.is_done),
+              completedAt: payload.new.completed_at || null
+            };
             setGoals(prev => prev.map(g => g.id === updatedGoal.id ? { ...g, ...updatedGoal } : g));
           } else if (payload.eventType === 'DELETE') {
             setGoals(prev => prev.filter(g => g.id !== payload.old.id));
@@ -375,6 +394,8 @@ export const BudgetProvider = ({ children }) => {
       id: goalId,
       title,
       targetAmount: Number(targetAmount),
+      isDone: false,
+      completedAt: null,
       createdAt
     };
 
@@ -386,6 +407,8 @@ export const BudgetProvider = ({ children }) => {
         family_id: familyCode,
         title,
         target_amount: Number(targetAmount),
+        is_done: false,
+        completed_at: null,
         created_at: createdAt
       });
     }
@@ -411,6 +434,21 @@ export const BudgetProvider = ({ children }) => {
 
     if (dbMode === 'cloud') {
       await dbClient.from('bb_goals').delete().eq('id', id);
+    }
+  };
+
+  const toggleGoalDone = async (id, isDone) => {
+    const completedAt = isDone ? new Date().toISOString() : null;
+    setGoals(prev => prev.map(g => g.id === id ? { ...g, isDone, completedAt } : g));
+
+    if (dbMode === 'cloud') {
+      await dbClient
+        .from('bb_goals')
+        .update({
+          is_done: isDone,
+          completed_at: completedAt
+        })
+        .eq('id', id);
     }
   };
 
@@ -576,7 +614,8 @@ export const BudgetProvider = ({ children }) => {
       deleteTransaction,
       addGoal,
       updateGoal,
-      deleteGoal
+      deleteGoal,
+      toggleGoalDone
     }}>
       {children}
     </BudgetContext.Provider>

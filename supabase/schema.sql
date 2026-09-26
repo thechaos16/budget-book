@@ -34,6 +34,8 @@ create table bb_goals (
   family_id text references bb_families(id) on delete cascade not null,
   title text not null,
   target_amount numeric not null,
+  is_done boolean default false not null,
+  completed_at timestamp with time zone default null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 

@@ -17,11 +17,14 @@ const KidDashboard = () => {
     return localStorage.getItem('bb_active_goal_id') || '';
   });
 
-  // Find the active goal object
-  let activeGoal = goals.find(g => g.id === activeGoalId);
-  // Fallback to first goal if activeGoalId doesn't exist or is not in the goals array
-  if (!activeGoal && goals.length > 0) {
-    activeGoal = goals[0];
+  // Only display undone goals on the front page
+  const undoneGoals = goals.filter(g => !g.isDone && !g.completedAt);
+
+  // Find the active goal object among undone goals
+  let activeGoal = undoneGoals.find(g => g.id === activeGoalId);
+  // Fallback to first undone goal if activeGoalId doesn't exist or is not in the undone goals array
+  if (!activeGoal && undoneGoals.length > 0) {
+    activeGoal = undoneGoals[0];
   }
 
   const handleGoalSelect = (id) => {
@@ -165,11 +168,11 @@ const KidDashboard = () => {
               )}
 
               {/* Goal List for selection */}
-              {goals.length > 1 && (
+              {undoneGoals.length > 1 && (
                 <div className="goal-selector-section">
                   <h5 className="goal-selector-title">다른 목표 선택하기 🎯</h5>
                   <div className="goal-selector-list">
-                    {goals.map(g => {
+                    {undoneGoals.map(g => {
                       const isSelected = g.id === activeGoal.id;
                       const gProgress = Math.min(Math.round((balance / g.targetAmount) * 100), 100);
                       return (

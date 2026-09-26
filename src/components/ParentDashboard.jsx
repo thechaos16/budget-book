@@ -24,7 +24,8 @@ const ParentDashboard = () => {
     deleteTransaction, 
     addGoal, 
     updateGoal,
-    deleteGoal 
+    deleteGoal,
+    toggleGoalDone
   } = useBudget();
 
   // Form states for giving money
@@ -434,7 +435,7 @@ const ParentDashboard = () => {
                   {goals.map(g => {
                     const isEditing = editingGoalId === g.id;
                     return (
-                      <div key={g.id} className={`parent-goal-item ${isEditing ? 'editing' : ''}`}>
+                      <div key={g.id} className={`parent-goal-item ${isEditing ? 'editing' : ''} ${g.isDone ? 'is-completed' : ''}`}>
                         {isEditing ? (
                           <div className="parent-goal-edit-form">
                             <input
@@ -476,9 +477,32 @@ const ParentDashboard = () => {
                           </div>
                         ) : (
                           <>
-                            <div className="parent-goal-info">
-                              <span className="parent-goal-title">{g.title}</span>
-                              <span className="parent-goal-target">{g.targetAmount.toLocaleString()}원</span>
+                            <div className="parent-goal-main">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const nextDone = !g.isDone;
+                                  toggleGoalDone(g.id, nextDone);
+                                  if (nextDone) {
+                                    confetti({
+                                      particleCount: 30,
+                                      spread: 40,
+                                      origin: { y: 0.6 }
+                                    });
+                                  }
+                                }}
+                                className={`goal-done-toggle-btn ${g.isDone ? 'completed' : ''}`}
+                                title={g.isDone ? '완료 취소' : '목표 완료 표시'}
+                              >
+                                <CheckCircle size={18} />
+                              </button>
+                              <div className="parent-goal-info">
+                                <div className="parent-goal-title-row">
+                                  <span className={`parent-goal-title ${g.isDone ? 'completed-text' : ''}`}>{g.title}</span>
+                                  {g.isDone && <span className="parent-goal-done-badge">완료됨</span>}
+                                </div>
+                                <span className="parent-goal-target">{g.targetAmount.toLocaleString()}원</span>
+                              </div>
                             </div>
                             <div className="parent-goal-actions">
                               <button
@@ -1024,9 +1048,62 @@ const ParentDashboard = () => {
           border-radius: var(--border-radius-sm);
         }
 
+        .parent-goal-item.is-completed {
+          background: #f1f5f9;
+          border-color: #cbd5e1;
+          opacity: 0.85;
+        }
+
+        .parent-goal-main {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .goal-done-toggle-btn {
+          background: transparent;
+          border: none;
+          color: #cbd5e1;
+          cursor: pointer;
+          padding: 2px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          transition: var(--transition-smooth);
+        }
+
+        .goal-done-toggle-btn:hover {
+          color: #10b981;
+        }
+
+        .goal-done-toggle-btn.completed {
+          color: #10b981;
+        }
+
         .parent-goal-info {
           display: flex;
           flex-direction: column;
+        }
+
+        .parent-goal-title-row {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .parent-goal-title.completed-text {
+          text-decoration: line-through;
+          color: #94a3b8;
+        }
+
+        .parent-goal-done-badge {
+          font-size: 0.65rem;
+          font-weight: 700;
+          color: #059669;
+          background: #d1fae5;
+          padding: 1px 6px;
+          border-radius: 10px;
         }
 
         .parent-goal-title {
